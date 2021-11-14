@@ -1,0 +1,11 @@
+# Create User
+curl -XPOST localhost:5000/users -d 'email=bob@bob.com' -d 'password=mySuperPwd'
+
+# Reset password
+curl -XPOST localhost:5000/reset_password -d 'email=bob@bob.com'
+
+# Update password
+curl -XPUT localhost:5000/reset_password -d 'email=bob@bob.com' -d 'new_password=Larry' -d 'reset_token=' 
+
+# Log in
+curl -XPOST localhost:5000/sessions -d 'email=bob@bob.com' -d 'password=Larry' -v

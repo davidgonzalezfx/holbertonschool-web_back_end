@@ -1,0 +1,8 @@
+# Create User
+curl -XPOST localhost:5000/users -d 'email=bob@bob.com' -d 'password=mySuperPwd'
+
+# Log in
+curl -XPOST localhost:5000/sessions -d 'email=bob@bob.com' -d 'password=mySuperPwd' -v
+
+# Log out
+curl -XDELETE localhost:5000/sessions --cookie "session_id=ID" -v
