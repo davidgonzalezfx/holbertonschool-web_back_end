@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
-"""
-basic Flask app
-"""
+""" Module for trying out Babel i18n """
+from flask_babel import Babel, _
+from flask import Flask, render_template, request, g
+import pytz
+from typing import Union
 
-from typing import Dict, Union
-from flask import Flask, render_template, request
-import flask
-from flask_babel import Babel
+app = Flask(__name__, template_folder='templates')
+babel = Babel(app)
 
 
 class Config(object):
-    """Config class for babel"""
+    """ Configuration Class for Babel """
+
     LANGUAGES = ['en', 'fr']
     BABEL_DEFAULT_LOCALE = 'en'
     BABEL_DEFAULT_TIMEZONE = 'UTC'
 
 
-app = Flask(__name__)
-babel = Babel(app)
 app.config.from_object(Config)
+
 users = {
     1: {"name": "Balou", "locale": "fr", "timezone": "Europe/Paris"},
     2: {"name": "Beyonce", "locale": "en", "timezone": "US/Central"},
@@ -27,47 +27,52 @@ users = {
 }
 
 
-def get_user(login_as: int) -> Union[dict, None]:
-    """ function that returns a user dictionary or None if the ID
-    cannot be found"""
-    return users.get(int(login_as)) if login_as else None
+def get_user() -> Union[dict, None]:
+    """ Returns a user dictionary or
+    None if the ID cannot be found or
+    if login_as was not passed.
+    """
+
+    try:
+        login_as = request.args.get("login_as")
+        user = users[int(login_as)]
+    except Exception:
+        user = None
+
+    return user
 
 
 @app.before_request
 def before_request():
-    """Method executed before all other functions."""
-    login_as = request.args.get('login_as')
-    user = get_user(login_as)
-    if user:
-        flask.g.user = user
+    """ Operations that happen before any request """
+    user = get_user()
+    g.user = user
+
+
+@app.route('/', methods=['GET'], strict_slashes=False)
+def hello_world() -> str:
+    """Renders a Basic Template for Babel Implementation"""
+    return render_template("6-index.html")
 
 
 @babel.localeselector
 def get_locale() -> str:
-    """Get locale parameters"""
-    locale = request.args.get('locale')
-    match = app.config['LANGUAGES']
-    if locale and locale in match:
+    """Select a language translation to use for that request"""
+    locale = request.args.get("locale")
+    if locale and locale in app.config['LANGUAGES']:
         return locale
-    try:
-        user = flask.g.user
-    except:
-        user = None
-    if user:
-        locale = user.get('locale', '')
-        if locale and locale in match:
+
+    if g.user:
+        locale = g.user.get("locale")
+        if locale and locale in app.config['LANGUAGES']:
             return locale
+
     locale = request.headers.get('locale')
-    if locale and locale in match:
+    if locale and locale in app.config['LANGUAGES']:
         return locale
-    return request.accept_languages.best_match(match)
 
-
-@app.route('/', methods=['GET'])
-def home() -> str:
-    """Basic welcome"""
-    return render_template('6-index.html')
+    return request.accept_languages.best_match(app.config['LANGUAGES'])
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port="5000")
+    app.run()
